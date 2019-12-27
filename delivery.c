@@ -37,6 +37,7 @@ int str_to_hex(void)
 		++i;
 	}
 	printf("\n");
+	return 0;
 }
 
 #include <stdio.h>

@@ -10,20 +10,23 @@
 #define PRINT_PURPLE(str)   printf("\033[0;35m%s\033[0;39m", str);
 #define PRINT_SEPARATOR     PRINT_BULE("---------------------------------------------------------\n")
 #define BULE_DIVISION       "\033[0;34m|\033[0;39m"
-#define DELIVER(func,is_run,delivery,separator,desc)  deliver(func, is_run, #func, delivery_c[delivery],separator, desc);
+#define DELIVER(func,is_run,delivery,is_show_desc,desc)  deliver(func, is_run, #func, delivery_c[delivery],is_show_desc, desc);
 #define DESC(desc)          do { PRINT_GREEN("方法描述:\n") printf("%s\n", desc); PRINT_ENTER PRINT_SEPARATOR } while(0);
-#define PRINT_INFO          printf("%*.*s %s 是否执行: %*.*s %s 进度: %*.*s\n", 16, 16,  func_name, BULE_DIVISION, 8, 6, is_run ? "执行" : "忽略", BULE_DIVISION, 16, 12, delivery_c);
+#define PRINT_INFO          printf("%*.*s %s 是否执行: %*.*s %s 进度: %*.*s\n", \
+		16, 16,  func_name, BULE_DIVISION, 8, 6, is_run ? "执行" : "忽略", BULE_DIVISION, 16, 12, delivery_c);
 
 typedef int (*deliver_cb)(void);
 
-void deliver(deliver_cb deliver_cb, int is_run, char* func_name, char* delivery_c, int is_desc, char* desc) 
+void deliver(deliver_cb deliver_cb, int is_run, char* func_name, char* delivery_c, int is_show_desc, char* desc) 
 {
 	PRINT_INFO
 	PRINT_SEPARATOR
-	if (is_desc) DESC(desc)
+	if (is_show_desc) DESC(desc)
 	if (is_run) {
 		PRINT_YELLOW("执行结果: \n")
-		deliver_cb();
+		int rv = 0;
+		rv = deliver_cb();
+		if (rv > 0) PRINT_RED("执行不成功")
 		PRINT_ENTER
 		PRINT_SEPARATOR
 	}
