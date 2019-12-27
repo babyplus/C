@@ -8,11 +8,11 @@
 #define PRINT_YELLOW(str)   printf("\033[0;33m%s\033[0;39m", str);
 #define PRINT_BULE(str)     printf("\033[0;34m%s\033[0;39m", str);
 #define PRINT_PURPLE(str)   printf("\033[0;35m%s\033[0;39m", str);
-#define PRINT_SEPARATOR     PRINT_BULE("-------------------------------------------\n")
+#define PRINT_SEPARATOR     PRINT_BULE("---------------------------------------------------------\n")
 #define BULE_DIVISION       "\033[0;34m|\033[0;39m"
 #define DELIVER(func,is_run,delivery,separator,desc)  deliver(func, is_run, #func, delivery_c[delivery],separator, desc);
 #define DESC(desc)          do { PRINT_GREEN("方法描述:\n") printf("%s\n", desc); PRINT_ENTER PRINT_SEPARATOR } while(0);
-#define PRINT_INFO          printf("%*.*s %s %*.*s %s %*.*s\n", 16, 16,  func_name, BULE_DIVISION, 8, 6, is_run ? "执行" : "忽略", BULE_DIVISION, 16, 12, delivery_c);
+#define PRINT_INFO          printf("%*.*s %s 是否执行: %*.*s %s 进度: %*.*s\n", 16, 16,  func_name, BULE_DIVISION, 8, 6, is_run ? "执行" : "忽略", BULE_DIVISION, 16, 12, delivery_c);
 
 typedef int (*deliver_cb)(void);
 
@@ -52,10 +52,10 @@ void main(void)
 	};	
 	PRINT_PURPLE("===============================================================================\n")
 	PRINT_SEPARATOR
-	DELIVER(go_test,      0, goodProgress, 1, "测试回调函数")
-	DELIVER(data_length,  0, goodProgress, 0, "计算数据长度")
-	DELIVER(str_to_hex,   1, goodProgress, 1, "字符串转16进制")
-	DELIVER(send_message, 0, goodProgress, 1, "发送报文")
+	DELIVER(go_test,          0, goodProgress, 1, "测试回调函数")
+	DELIVER(data_length,      0, goodProgress, 1, "计算数据长度")
+	DELIVER(str_to_hex,       1, goodProgress, 1, "字符串转16进制")
+	DELIVER(send_oam_ais_pdu, 1, goodProgress, 1, "获取网卡enp0s3的地址并从该网卡发送Y1731中的AIS报文")
 	PRINT_PURPLE("===============================================================================\n")
 
 }
