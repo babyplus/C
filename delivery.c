@@ -83,3 +83,20 @@ int  get_src_mac_by_str(void)
 	}
 	return (EXIT_SUCCESS);
 }
+
+int count_char_of_hex(void)
+{
+	char * data_str = "20028902 8021:aD";
+	int num = 0;
+	int i = 0;
+	int data_len = 0;
+	while (data_str[data_len] != 0) ++data_len;
+	for ( i=0; i < data_len; i++ ) {
+		if (('0' <= data_str[i]) && (data_str[i] <= '9') 
+			|| ('a' <= data_str[i]) && (data_str[i] <= 'f') 
+			|| ('A' <= data_str[i]) && (data_str[i] <= 'F') 
+		) num++;
+	}
+	printf("%s --> %d", data_str, num);	
+	return (EXIT_SUCCESS);
+}

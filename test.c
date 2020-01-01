@@ -13,7 +13,9 @@
 #define BULE_DIVISION       "\033[0;34m|\033[0;39m"
 
 #define DELIVER(func,is_run,delivery,is_show_desc,desc)  deliver(func, is_run, #func, delivery_c[delivery],is_show_desc, desc);
+
 #define SHOW(what)          SHOW_##what(what)
+#define RUN(what)           RUN_##what(what)
 
 #define SHOW_desc(desc)          do {  \
 	PRINT_GREEN("方法描述:\n") \
@@ -21,13 +23,14 @@
 	PRINT_ENTER  \
 	PRINT_SEPARATOR \
 } while(0);
-#define RUN(deliver_cb)     do {  \
+#define RUN_deliver_cb(deliver_cb)     do {  \
 	PRINT_YELLOW("执行结果: \n")  \
 	if (deliver_cb() > 0)  \
 	PRINT_RED("执行不成功")  \
 	PRINT_ENTER  \
 	PRINT_SEPARATOR  \
 } while(0);
+
 #define PRINT_INFO          printf("%*.*s %s 是否执行: %*.*s %s 进度: %*.*s\n", \
 		20, 20,  func_name, BULE_DIVISION, 8, 6, is_run ? "执行" : "忽略", BULE_DIVISION, 16, 12, delivery_c);
 
@@ -61,13 +64,15 @@ void main(void)
 		"等待实现",
 		"此路不通",
 		"已经实现"
-	};	
+	};
+
 	PRINT_PURPLE("===============================================================================\n")
 	PRINT_SEPARATOR
 	DELIVER(go_test,              0, goodProgress, 0, "测试回调函数")
 	DELIVER(data_length,          0, goodProgress, 0, "计算数据长度")
 	DELIVER(str_to_hex,           0, goodProgress, 0, "字符串转16进制")
-	DELIVER(get_src_mac_by_str,   1, goodProgress, 0, "获取网卡enp0s3的地址")
+	DELIVER(get_src_mac_by_str,   0, goodProgress, 0, "获取网卡enp0s3的地址")
+	DELIVER(count_char_of_hex,    1, goodProgress, 1, "统计出字符串中0-9,a-f,A-F的个数")
 	PRINT_PURPLE("===============================================================================\n")
 	PRINT_SEPARATOR
 	DELIVER(send_oam_ais_pdu,     0, goodProgress, 0, "获取网卡enp0s3的地址并从该网卡发送Y1731 AIS报文")

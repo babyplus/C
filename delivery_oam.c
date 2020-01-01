@@ -121,12 +121,136 @@ int send_oam_ais_pdu(void)
     return (EXIT_SUCCESS);
 }
 
-int send_oam_ltm_pdu(void)
+int receive_oam_ltr_pdu(void)
 {
 	return (EXIT_SUCCESS);
 }
 
-int receive_oam_ltr_pdu(void)
+int _translate_str_to_uint8_t(char * str, uint8_t * uint8, int len)
 {
-	return (EXIT_SUCCESS);
+	char tmp, data_iter;
+	int data_len = 0;
+        while (str[data_len] != 0) ++data_len;
+	int i = 0;
+	int r = 0;
+	int uint8_tmp_index = 0;
+	uint8_t uint8_tmp[len];
+	memset(uint8_tmp, 0, len);
+        while (i < data_len) {
+                data_iter = str[i];
+                if (('0' <= data_iter) && (data_iter <= '9')) {
+                        tmp = data_iter - '0';
+			uint8_tmp[uint8_tmp_index] = r ? ((uint8_tmp[uint8_tmp_index] << 4) + tmp) :  (uint8_tmp[uint8_tmp_index] + tmp);
+                }
+                else if (('a' <= data_iter) && (data_iter <= 'f')) {
+                        tmp = data_iter - 'a' + 10;
+			uint8_tmp[uint8_tmp_index] = r ? ((uint8_tmp[uint8_tmp_index] << 4) + tmp) :  (uint8_tmp[uint8_tmp_index] + tmp);
+                }
+                else if (('A' <= data_iter) && (data_iter <= 'F')) {
+                        tmp = data_iter - 'A' + 10;
+			uint8_tmp[uint8_tmp_index] = r ? ((uint8_tmp[uint8_tmp_index] << 4) + tmp) :  (uint8_tmp[uint8_tmp_index] + tmp);
+                }
+		else if (':' == data_iter | ' ' == data_iter) {
+			++i;
+			continue;
+		}
+                else {
+                        printf("Unexpected char: %c\n", data_iter);
+                        return 1;
+                }
+		if (r) {
+			uint8_tmp_index++;
+			r = 0;
+		}else r=1;
+                ++i;
+        }
+	memcpy (uint8 , uint8_tmp, sizeof(uint8_tmp));
+}
+
+
+int  send_oam_ltm_pdu(void) 
+{
+
+	uint8_t tmp_data[] = {};
+	int tmp_data_len = 0;
+	// 通过网卡名获取源地址
+	char * interface = "enp0s3";
+	int sd;
+	uint8_t src_mac[6];
+	uint8_t dst_mac[6];
+	struct ifreq ifr;
+	struct sockaddr_ll device;
+
+	if ((sd = socket (PF_PACKET, SOCK_RAW, htons (ETH_P_ALL))) < 0) {
+	        perror ("socket() failed to get socket descriptor for using ioctl() ");
+	        exit (EXIT_FAILURE);
+	}
+	memset(&ifr, 0, sizeof(ifr));
+	snprintf (ifr.ifr_name, sizeof (ifr.ifr_name), "%s", interface);
+	if (ioctl (sd, SIOCGIFHWADDR, &ifr) < 0) {
+		perror ("ioctl() failed to get source MAC address ");
+		return (EXIT_FAILURE);
+	}
+	close (sd);
+	memcpy (src_mac, ifr.ifr_hwaddr.sa_data, sizeof(src_mac));
+	int i = 0;
+	for(i = 0; i < sizeof(src_mac); i++){
+		printf( i==5 ? "%.2x\n" : "%.2x:", src_mac[i]);
+	}
+
+	memset(&device, 0 ,sizeof(device));
+	if ((device.sll_ifindex = if_nametoindex (interface)) == 0) {
+		perror("if_nametoindex() failed to obtain interface index.");
+		return (EXIT_FAILURE);
+	}
+	printf("Index for interface %s is %i \n", interface, device.sll_ifindex);
+
+	device.sll_family = AF_PACKET;
+	memcpy(device.sll_addr, src_mac, 6);
+	device.sll_halen = htons(6);
+
+	char * dst_mac_str = "01:80:c2:00:00:37";
+	_translate_str_to_uint8_t(dst_mac_str, dst_mac, 6);
+        for(i = 0; i < sizeof(dst_mac); i++){
+                printf( i==5 ? "%.2x\n" : "%.2x:", dst_mac[i]);
+        }
+
+	char * eth_type_str = "8100";
+	uint8_t eth_type[2] = {0};
+	_translate_str_to_uint8_t(eth_type_str, eth_type, 2);
+        for(i = 0; i < sizeof(eth_type); i++){
+                printf("%.2x", eth_type[i]);
+        }
+	printf("\n");
+	
+	// vlan = 2 : is a ais pdu : pdu data
+	char * data_str = "20028902 8021:04";
+	uint8_t data[7] = {0};
+	_translate_str_to_uint8_t(data_str, data, 7);
+        for(i = 0; i < sizeof(data); i++){
+                printf("%.2x", data[i]);
+        }
+	printf("\n");
+
+	int frame_length = 6+6+2+7+2;
+	uint8_t ether_frame[IP_MAXPACKET];
+	memcpy(ether_frame, dst_mac, 6);
+	memcpy(ether_frame + 6, src_mac, 6);
+	memcpy(ether_frame + 12, eth_type, 2);
+	memcpy(ether_frame + 14, data, 7);
+
+	int bytes;
+	// Submit request for a raw socket descriptor.
+	if ((sd = socket (PF_PACKET, SOCK_RAW, htons (ETH_P_ALL))) < 0) {//创建正真发送的socket
+	    perror ("socket() failed ");
+	    exit (EXIT_FAILURE);
+	}
+	// Send ethernet frame to socket.
+	if ((bytes = sendto (sd, ether_frame, frame_length, 0, (struct sockaddr *) &device, sizeof (device))) <= 0) {
+	    perror ("sendto() failed");
+	    exit (EXIT_FAILURE);
+	}
+	printf ("send num=%d,read num=%d\n",frame_length,bytes);     
+	// Close socket descriptor.
+	close (sd);
 }
