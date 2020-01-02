@@ -150,7 +150,7 @@ int _translate_str_to_uint8_t(char * str, uint8_t * uint8, int len)
                         tmp = data_iter - 'A' + 10;
 			uint8_tmp[uint8_tmp_index] = r ? ((uint8_tmp[uint8_tmp_index] << 4) + tmp) :  (uint8_tmp[uint8_tmp_index] + tmp);
                 }
-		else if (':' == data_iter | ' ' == data_iter) {
+		else if ( ':' == data_iter | ' ' == data_iter | '|' == data_iter ) {
 			++i;
 			continue;
 		}
@@ -167,8 +167,24 @@ int _translate_str_to_uint8_t(char * str, uint8_t * uint8, int len)
 	memcpy (uint8 , uint8_tmp, sizeof(uint8_tmp));
 }
 
+int _count_char_of_hex(char * data_str, int * p_hex_num)
+{
+        int num = 0;
+        int i = 0;
+        int data_len = 0;
+        while (data_str[data_len] != 0) ++data_len;
+        for ( i=0; i < data_len; i++ ) {
+                if (('0' <= data_str[i]) && (data_str[i] <= '9')
+                        || ('a' <= data_str[i]) && (data_str[i] <= 'f')
+                        || ('A' <= data_str[i]) && (data_str[i] <= 'F')
+                ) num++;
+        }
+	*p_hex_num = num;
+        printf("%s --> %d\n", data_str, num);
+        return (EXIT_SUCCESS);
+}
 
-int  send_oam_ltm_pdu(void) 
+int  send_oam_ltm_pdu_by_str(void) 
 {
 
 	uint8_t tmp_data[] = {};
@@ -223,21 +239,26 @@ int  send_oam_ltm_pdu(void)
         }
 	printf("\n");
 	
-	// vlan = 2 : is a ais pdu : pdu data
-	char * data_str = "20028902 8021:04";
-	uint8_t data[7] = {0};
-	_translate_str_to_uint8_t(data_str, data, 7);
+	// vlan = 2 | is a ltm pdu | pdu data
+	char * data_str = "20028902 | 8005 | 80 11 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01";
+	int hex_num = 0;
+	int data_len = 0;
+	_count_char_of_hex(data_str, &hex_num);
+	data_len = hex_num/2;
+	uint8_t data[data_len];
+	memset(data , 0, sizeof(uint8_t) * data_len);
+	_translate_str_to_uint8_t(data_str, data, data_len);
         for(i = 0; i < sizeof(data); i++){
                 printf("%.2x", data[i]);
         }
 	printf("\n");
 
-	int frame_length = 6+6+2+7+2;
+	int frame_length = 6+6+2+ data_len +2;
 	uint8_t ether_frame[IP_MAXPACKET];
 	memcpy(ether_frame, dst_mac, 6);
 	memcpy(ether_frame + 6, src_mac, 6);
 	memcpy(ether_frame + 12, eth_type, 2);
-	memcpy(ether_frame + 14, data, 7);
+	memcpy(ether_frame + 14, data, data_len);
 
 	int bytes;
 	// Submit request for a raw socket descriptor.
