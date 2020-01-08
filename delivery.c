@@ -100,3 +100,64 @@ int count_char_of_hex(void)
 	printf("%s --> %d", data_str, num);	
 	return (EXIT_SUCCESS);
 }
+
+#include<time.h>
+int get_time(void)
+{
+	time_t timep;
+	memset(&timep, 0, sizeof(time_t));
+	timep = time(NULL);
+	printf("time: %ld\n\n", time(&timep));
+	printf("time: %s\n", ctime(&timep));
+	struct tm tm;
+	memset(&tm, 0, sizeof(struct tm));
+	localtime_r(&timep, &tm);
+	printf("time: %i-%i-%i\n\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+	printf("begin time: %ld\n", time(&timep));
+	printf("wait 3 seconds\n");
+	sleep(3);
+	printf("end time: %ld\n\n", time(&timep));
+	return (EXIT_SUCCESS);
+}
+
+#include <signal.h>
+int timing_kill_by_signal(void)
+{
+	pid_t pid;
+	pid = fork();
+	void handler(int i)
+	{
+		sleep(2); // 如果不加这句, 控制台输出会乱序
+		exit(0);
+	}
+	if ( pid < 0 ) {
+		perror("fork()");
+		exit(EXIT_FAILURE);
+	}
+	else if ( ! pid ) {
+		sleep(6);
+	} else {
+		signal(SIGALRM, handler);
+		alarm(5);
+		while (1) {
+			printf("wait\n");
+			sleep(1);
+		} 
+	}
+	return (EXIT_SUCCESS);
+}
+
+#include <time.h>
+int timing_kill_by_timestamp(void)
+{
+	time_t timep;
+	short timeout = 5;
+	memset(&timep, 0, sizeof(time_t));
+	timep = time(NULL);
+	long tmp = time(&timep);
+	while(time(&timep)-tmp < timeout){
+		printf("wait %ld\n", time(&timep)-tmp+1);
+		sleep(1);
+	}
+	return (EXIT_SUCCESS);
+}
