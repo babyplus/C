@@ -121,11 +121,6 @@ int send_oam_ais_pdu(void)
     return (EXIT_SUCCESS);
 }
 
-int receive_oam_ltr_pdu(void)
-{
-	return (EXIT_SUCCESS);
-}
-
 int _translate_str_to_uint8_t(char * str, uint8_t * uint8, int len)
 {
 	char tmp, data_iter;
@@ -239,8 +234,8 @@ int  send_oam_ltm_pdu_by_str(void)
         }
 	printf("\n");
 	
-	// vlan = 2 | is a ltm pdu | pdu data
-	char * data_str = "20028902 | 8005 | 80 11 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01";
+	// vlan = 2 | is cfm  | is a ltm pdu | pdu data
+	char * data_str = "2007 | 8902 | 8005 | 80 11 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01";
 	int hex_num = 0;
 	int data_len = 0;
 	_count_char_of_hex(data_str, &hex_num);
@@ -274,4 +269,89 @@ int  send_oam_ltm_pdu_by_str(void)
 	printf ("send num=%d,read num=%d\n",frame_length,bytes);     
 	// Close socket descriptor.
 	close (sd);
+}
+int  receive_oam_pdu(void) 
+{
+
+	typedef struct _cfm //定义首部 
+	{ 
+	    unsigned char level_and_version;
+	    unsigned char opcode;
+	}CFM_HEADER;
+
+	// 通过网卡名获取源地址
+	char * interface = "enp0s8";
+	int sd;
+	struct ifreq ifr;
+	uint8_t src_mac[6];
+	struct sockaddr_ll device;
+
+	if ((sd = socket (PF_PACKET, SOCK_RAW, htons (ETH_P_ALL))) < 0) {
+	        perror ("socket() failed to get socket descriptor for using ioctl() ");
+	        exit (EXIT_FAILURE);
+	}
+	memset(&ifr, 0, sizeof(ifr));
+	snprintf (ifr.ifr_name, sizeof (ifr.ifr_name), "%s", interface);
+	if (ioctl (sd, SIOCGIFHWADDR, &ifr) < 0) {
+		perror ("ioctl() failed to get source MAC address ");
+		return (EXIT_FAILURE);
+	}
+	close (sd);
+	memcpy (src_mac, ifr.ifr_hwaddr.sa_data, sizeof(src_mac));
+	int i = 0;
+	for(i = 0; i < sizeof(src_mac); i++){
+		printf( i==5 ? "%.2x\n" : "%.2x:", src_mac[i]);
+	}
+
+	memset(&device, 0 ,sizeof(device));
+	if ((device.sll_ifindex = if_nametoindex (interface)) == 0) {
+		perror("if_nametoindex() failed to obtain interface index.");
+		return (EXIT_FAILURE);
+	}
+	printf("Index for interface %s is %i \n", interface, device.sll_ifindex);
+
+	device.sll_family = AF_PACKET;
+	memcpy(device.sll_addr, src_mac, 6);
+	device.sll_halen = htons(6);
+
+	if ((sd = socket (PF_PACKET, SOCK_DGRAM, htons (ETH_P_8021Q))) < 0) {//创建正真接收的socket
+	    perror ("socket() failed ");
+	    exit (EXIT_FAILURE);
+	}
+
+	device.sll_protocol = htons(0x8902);
+	if (bind(sd, (struct sockaddr *) &device, sizeof(device)) < 0)
+	{
+		perror("bind() failed ");
+	    	exit (EXIT_FAILURE);
+	}
+
+
+	CFM_HEADER * cfm;
+
+	int n = 0;
+	char buf[10240] = {0}; 	
+	while (1)
+	{
+	    n = recv(sd, buf, sizeof(buf), 0);
+	    if (n == -1)
+	    {
+	        printf("recv error!\n");
+	        break;
+	    }
+	    else if (n==0)
+	        continue;
+	    //接收数据不包括数据链路帧头
+	    cfm = (CFM_HEADER *) buf;
+	    printf("CFM\n\n");
+	    printf("cfm->level_and_version :%x\n\n", cfm->level_and_version);
+	    printf("cfm->opcode: %x\n\n", cfm->opcode);
+	}	
+	close(sd);
+	return 0;
+}
+
+int capture_oam_pdu(void)
+{
+	return 0;
 }

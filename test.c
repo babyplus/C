@@ -76,8 +76,9 @@ void main(void)
 	PRINT_PURPLE("===============================================================================\n")
 	PRINT_SEPARATOR
 	DELIVER(send_oam_ais_pdu,            0, goodProgress, 0, "获取网卡enp0s3的地址并从该网卡发送Y1731 AIS报文")
-	DELIVER(send_oam_ltm_pdu_by_str,     1, goodProgress, 1, "根据字符串发送Y1731 LTM报文")
-	DELIVER(receive_oam_ltr_pdu,         0, started,      0, "接收ltr报文并处理")
+	DELIVER(send_oam_ltm_pdu_by_str,     1, goodProgress, 0, "根据字符串发送Y1731 LTM报文")
+	DELIVER(receive_oam_pdu,             1, betaAvailable,1, "接收CFM报文并处理")
+	DELIVER(capture_oam_pdu,             1, started,      1, "捕获CFM报文并处理")
 	PRINT_PURPLE("===============================================================================\n")
 	
 }
