@@ -189,24 +189,24 @@ int delay_pro(void)
 		struct timeval * time_second;
 	} delay_t;
 
-	delay_t delay = {0};
+	delay_t _delay ;
+	delay_t * delay = &_delay;
 
 	struct timeval tmp_first;	
 	gettimeofday(&tmp_first, NULL);
-	delay.time_first = &tmp_first;
-	printf("%ld\n", tmp_first.tv_sec);
-	printf("%p\n", delay.time_first);
-	printf("%ld\n", (*delay.time_first).tv_sec);
+	delay->time_first = &tmp_first;
+	printf("%p\n", delay->time_first);
+	printf("%ld\n", (*delay->time_first).tv_sec);
 	sleep(2);
 	struct timeval tmp_second;	
 	gettimeofday(&tmp_second, NULL);
-	delay.time_second = &tmp_second;
-	printf("%ld\n", tmp_first.tv_sec);
-	printf("%p\n", delay.time_second);
-	printf("%ld\n", (*delay.time_second).tv_sec);
+	delay->time_second = &tmp_second;
+	printf("%p\n", delay->time_second);
+	printf("%ld\n", (*delay->time_second).tv_sec);
 
-	printf("%.3f ms\n", ((*delay.time_second).tv_sec -
-					(*delay.time_first).tv_sec) * 1000 +
-					((*delay.time_second).tv_usec - (*delay.time_first).tv_usec) / 1000.0);
+	printf("%.3f ms\n", ((*delay->time_second).tv_sec -
+					(*delay->time_first).tv_sec) * 1000 +
+					((*delay->time_second).tv_usec - (*delay->time_first).tv_usec) / 1000.0);
+
 	return (EXIT_SUCCESS);
 }
