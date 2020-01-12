@@ -210,3 +210,30 @@ int delay_pro(void)
 
 	return (EXIT_SUCCESS);
 }
+
+int generate_random_32bit(void)
+{
+	int r =  rand();
+	printf("%ld\n", sizeof(r));
+	printf("%d\n", r);
+	printf("%x\n", r);
+	return (EXIT_SUCCESS);
+}
+
+int hex_to_str(void)
+{
+	return (EXIT_SUCCESS);
+}
+
+int str_combine(void)
+{
+	char * a = "a1";
+	char * b = "b2";
+	char buff[1024];
+	memset(buff, 0, sizeof(buff));
+	strcpy(buff, a);
+	strcat(buff, b);
+	printf("%s\n", buff);
+	return (EXIT_SUCCESS);
+}
+

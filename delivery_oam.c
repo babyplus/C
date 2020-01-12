@@ -22,7 +22,7 @@
 int send_oam_ais_pdu(void)
 {
     int i, datalen,frame_length, sd, bytes;
-    char *interface="enp0s3";
+    char *interface="enp0s8";
     uint8_t data[IP_MAXPACKET];
     uint8_t src_mac[6];
     uint8_t dst_mac[6];
@@ -185,7 +185,7 @@ int  send_oam_ltm_pdu_by_str(void)
 	uint8_t tmp_data[] = {};
 	int tmp_data_len = 0;
 	// 通过网卡名获取源地址
-	char * interface = "enp0s3";
+	char * interface = "enp0s8";
 	int sd;
 	uint8_t src_mac[6];
 	uint8_t dst_mac[6];
