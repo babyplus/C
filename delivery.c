@@ -220,8 +220,19 @@ int generate_random_32bit(void)
 	return (EXIT_SUCCESS);
 }
 
-int hex_to_str(void)
+int generate_hex_str(void)
 {
+	int str_len = 8;
+	int i;
+	char str[str_len + 1]; // C没有界限,所以需要加多一个结束符号
+	memset(str, 0x00, sizeof(str));
+	srand(time(NULL));
+	int r = 0;
+	for(i=0; i<str_len; i++){
+		r = rand();
+		str[i] = rand() % 2 ? r % ( 'f' - 'a' + 1 ) + 'a' : r % ( '9' - '0' + 1 ) + '0'; 
+	}
+	printf("hex str: %s\n", str);
 	return (EXIT_SUCCESS);
 }
 
