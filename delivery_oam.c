@@ -400,12 +400,16 @@ int receive_oam_pdu_by_while(void)
 	memcpy(device.sll_addr, src_mac, 6);
 	device.sll_halen = htons(6);
 
-	if ((sd = socket (PF_PACKET, SOCK_DGRAM, htons (ETH_P_8021Q))) < 0) {//创建正真接收的socket
+	if ((sd = socket (PF_PACKET, SOCK_RAW, htons (ETH_P_ALL))) < 0) {//创建正真接收的socket
 	    perror ("socket() failed ");
 	    exit (EXIT_FAILURE);
 	}
 
-	device.sll_protocol = htons(0x8902);
+	int val = 1;
+	if (setsockopt(sd, SOL_PACKET, PACKET_AUXDATA, &val, sizeof(val))) return -1;	
+	
+	device.sll_protocol = htons(ETH_P_ALL);
+	
 	if (bind(sd, (struct sockaddr *) &device, sizeof(device)) < 0)
 	{
 		perror("bind() failed ");
@@ -424,19 +428,43 @@ int receive_oam_pdu_by_while(void)
 	long tmp = time(&timep);	
 	while (time(&timep)-tmp < timeout)
 	{
-	    n = recv(sd, buf, sizeof(buf), 0);
-	    if (n == -1)
-	    {
-	        printf("recv error!\n");
-	        break;
-	    }
-	    else if (n==0)
-	        continue;
-	    //接收数据不包括数据链路帧头
-	    cfm = (CFM_HEADER *) buf;
-	    printf("CFM\n\n");
-	    printf("cfm->level_and_version :%x\n\n", cfm->level_and_version);
-	    printf("cfm->opcode: %x\n\n", cfm->opcode);
+		unsigned char cmsgbuf[CMSG_LEN(sizeof(struct tpacket_auxdata))];
+		struct iovec iov;
+		struct msghdr msg;
+		struct cmsghdr *cmsg;
+		struct tpacket_auxdata *aux;
+		struct sockaddr_ll addr;
+		int data_len;
+
+		unsigned char buff[10240] = {0};
+
+		iov.iov_base = buff;
+		iov.iov_len = 10240;
+
+		memset(&msg, 0, sizeof(msg));
+		msg.msg_name = &addr;
+		msg.msg_namelen = sizeof(addr);
+		msg.msg_iov = &iov;
+		msg.msg_iovlen = 1;
+		msg.msg_control = cmsgbuf;
+		msg.msg_controllen = sizeof(cmsgbuf);
+
+		data_len = recvmsg(sd, &msg, 0);
+		if ( data_len == -1 ) {
+			printf("recv error!\n");
+			break;	
+		} else if ( data_len == 0 ) continue;
+		for ( cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+			printf("cmsg_type: [%d]\n", cmsg->cmsg_type);
+			if ( cmsg->cmsg_level == SOL_PACKET && cmsg->cmsg_type == PACKET_AUXDATA) {
+				printf("data_len: %d\n", data_len);
+				aux = (void *)CMSG_DATA(cmsg); //DDD
+				printf("vlan: %x\n", aux->tp_vlan_tci);
+				for (i=0; i< 60;i++) printf("%02x ", buff[i]);
+				printf("\n");
+			}
+		}
+		
 	}	
 	close(sd);
 	return 0;
