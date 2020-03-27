@@ -248,3 +248,17 @@ int str_combine(void)
 	return (EXIT_SUCCESS);
 }
 
+int random_ip(void)
+{
+	unsigned int ip;
+	time_t t;
+	char i = 0;
+	time(&t);
+	printf("time stamp: %ld\n", t);
+	srandom(t);
+	for( i = 0; i < 5; i++ ){
+		ip = random() << 8 | 0x7f;
+		printf("%s\n",inet_ntoa(*(struct in_addr *)&ip));	
+	}
+	return (EXIT_SUCCESS);
+}
